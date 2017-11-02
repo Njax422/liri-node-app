@@ -2,20 +2,25 @@
 var command = process.argv[2];
 var request = require('request');
 var keys = require("./keys.js");
-
 var Twitter = require('twitter');
 var Spotify = require('node-spotify-api');
 
-if (command === "my-tweets") {
-	myTweets();
-} else if (command === "spotify-this-song") {	
-	spotifyThis();
-} 
-else if (command === "movie-this") {
-	movieThis();
-} else if (command == "do-what-it-says") {
-	doWhatItSays();
-}
+switch (command) {
+	case "my-tweets":
+		myTweets();
+		break;
+	case "spotify-this-song":
+		spotifyThis();
+		break;
+	case "movie-this":
+		movieThis();
+		break;
+	case "do-what-it-says":
+		doWhatItSays();
+		break;
+	default:
+		console.log("===============================================\nPlease follow one of the following formats:\nnode liri.js my-tweets\nnode liri.js spotify-this-song '<song name here>'\nnode liri.js movie-this '<movie name here>'\nnode liri.js do-what-it-says\n===============================================");
+};
 
 function myTweets (){
 	var client = new Twitter(keys.twitterKeys);
