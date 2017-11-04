@@ -14,5 +14,3 @@ module.exports = {
 	twitterKeys,
 	spotifyKeys
 }
-
-// console.log(twitterKeys.consumer_key);

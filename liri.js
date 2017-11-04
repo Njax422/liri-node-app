@@ -4,23 +4,32 @@ var request = require('request');
 var keys = require("./keys.js");
 var Twitter = require('twitter');
 var Spotify = require('node-spotify-api');
+var fs = require('fs');
 
-switch (command) {
-	case "my-tweets":
-		myTweets();
-		break;
-	case "spotify-this-song":
-		spotifyThis();
-		break;
-	case "movie-this":
-		movieThis();
-		break;
-	case "do-what-it-says":
-		doWhatItSays();
-		break;
-	default:
-		console.log("===============================================\nPlease follow one of the following formats:\nnode liri.js my-tweets\nnode liri.js spotify-this-song '<song name here>'\nnode liri.js movie-this '<movie name here>'\nnode liri.js do-what-it-says\n===============================================");
+var switchFunc = function (command, functInfo) {
+	switch (command) {
+		case "my-tweets":
+			myTweets();
+			break;
+		case "spotify-this-song":
+			spotifyThis();
+			break;
+		case "movie-this":
+			movieThis();
+			break;
+		case "do-what-it-says":
+			doWhatItSays();
+			break;
+		default:
+			console.log("===============================================\nPlease follow one of the following formats:\nnode liri.js my-tweets\nnode liri.js spotify-this-song '<song name here>'\nnode liri.js movie-this '<movie name here>'\nnode liri.js do-what-it-says\n===============================================");
+	};
+}
+
+var runSwitch = function(arg1, arg2) {
+	switchFunc(arg1, arg2);
 };
+
+runSwitch(process.argv[2], process.argv[3]);
 
 function myTweets (){
 	var client = new Twitter(keys.twitterKeys);
@@ -28,30 +37,43 @@ function myTweets (){
 	client.get('statuses/user_timeline', params, function(error, tweets, response) {
 	  	if (!error) {
 	  		for (var i = 0; i < tweets.length; i++) {
-	  		console.log("- " + tweets[i].text);
+	  			console.log("- " + tweets[i].text);
 	  		}
 	  	} else if (error) {
-	  	console.log(error);
+	  		console.log(error);
 	  	}
 	});
 }
 
-function spotifyThis (){
-	console.log(keys.spotifyKeys);
+var getNames = function(artist) {
+	return artist.name;
+}
+
+function spotifyThis (song){
 	var spotify = new Spotify(keys.spotifyKeys);
-	var song = "hello";
+	var song = "";
+	var args = process.argv;
+	for (var i = 3; i < args.length; i++) {
+	  if (i > 3) {
+	    song = song + "+" + args[i];
+	  } else {
+	    song += args[i];
+	  }
+	}
 	spotify.search({ type: 'track', query: song}, function(err, data) {
 	  	if (err) {
 	    	return console.log('Error occurred: ' + err);
-	  	}	
-		console.log(data);
+	  	}
+		var songInfo = data.tracks.items;
+		for (var i = 0; i < songInfo.length; i++) {
+			console.log(i);
+			console.log("artist(s): ", songInfo[i].artists.map(getNames));
+			console.log("song name: ", songInfo[i].name);
+			console.log("preview song: ", songInfo[i].preview_url);
+			console.log("album: ", songInfo[i].album.name, "\n");
+
+		}
 	});
-	// This will show the following information about the song in your terminal/bash window
-	// Artist(s)
-	// The song's name
-	// A preview link of the song from Spotify
-	// The album that the song is from
-	// If no song is provided then your program will default to "The Sign" by Ace of Base.
 };
 
 function movieThis (){
@@ -64,26 +86,38 @@ function movieThis (){
 	    movieName += args[i];
 	  }
 	}
-	console.log("Our movie is", movieName);
-	request("http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=40e9cece", function(error, response, body) {
-	  if (!error && response.statusCode === 200) {
-
-	    console.log("The movie's rating is: " + JSON.parse(body).imdbRating);
-	    // This will output the following information to your terminal/bash window:
-		//    * Title of the movie.
-		//    * Year the movie came out.
-		//    * IMDB Rating of the movie.
-		//    * Rotten Tomatoes Rating of the movie.
-		//    * Country where the movie was produced.
-		//    * Language of the movie.
-		//    * Plot of the movie.
-		//    * Actors in the movie.
-	  } 
-	// If the user doesn't type a movie in, the program will output data for the movie 'Mr. Nobody.'
+	console.log("Search terms: ", movieName);
+	request("http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=40e9cece",function(error, response, body) {
+			if (!error && response.statusCode === 200) {
+			var data = JSON.parse(body);
+			console.log("\n");
+		 	console.log("Title: " + data.Title);
+		 	console.log("Year: " + data.Year);
+		 	console.log("IMDB Rating: " + data.imdbRating);
+		 	console.log("Country: " + data.Country);
+		 	console.log("Language: " + data.Language);
+		 	console.log("Plot: " + data.Plot);
+		 	console.log("Actors: " + data.Actors);
+		 	console.log("\n");
+		  } 
 	});
 }
 
+
 function doWhatItSays () {
-// Using the fs Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
-// It should run spotify-this-song for "I Want it That Way," as follows the text in random.txt.
+	fs.readFile('random.txt', 'utf8', function (err, data) {
+		if (err)throw err;
+		var data = data.split(',');
+		console.log(data);
+		if (data.length == 2) {
+			switchFunc(data[0], data[1]);
+		}
+	});
 }
+
+
+
+
+
+
+
